@@ -29,30 +29,30 @@ type ChatReqInfo struct {
 	FrequencyPenalty float32        `json:"frequency_penalty"` // 模型逐字重复同一行的可能性 -2.0~2.0
 }
 
-type MessagesData struct {
-	Role    string `json:"role"`    // 角色 user/system/assistant
-	Content string `json:"content"` // 内容
-}
-
 type ChatRespInfo struct {
 	ID      string       `json:"id"`      // 聊天ID chatcmpl-74R4hDTKxzh5EzElrhofHa5msxvKz
 	Object  string       `json:"object"`  // 对象 chat.completion
 	Created uint64       `json:"created"` // 创建时间 1681291743
 	Model   string       `json:"model"`   // 模型ID gpt-3.5-turbo-0301
-	Usage   UsageData    `json:"usage"`   // 用量
-	Choices []ChoiceData `json:"choices"`
+	Choices []ChatChoice `json:"choices"` // 回答
+	Usage   ChatUsage    `json:"usage"`   // 用量
 }
 
-type UsageData struct {
-	PromptTokens     uint16 `json:"prompt_tokens"`     // 提问令牌数
-	CompletionTokens uint16 `json:"completion_tokens"` // 回答令牌数
-	TotalTokens      uint16 `json:"total_tokens"`      // 总令牌数
+type MessagesData struct {
+	Role    string `json:"role"`    // 角色 user/system/assistant
+	Content string `json:"content"` // 内容
 }
 
-type ChoiceData struct {
+type ChatChoice struct {
 	Messages     []MessagesData `json:"messages"`      // 消息
 	FinishReason string         `json:"finish_reason"` // 完成原因(stop为回答完毕)
 	Index        string         `json:"index"`         // 序列(第几个回答，与请求中N相关)
+}
+
+type ChatUsage struct {
+	PromptTokens     uint16 `json:"prompt_tokens"`     // 提问令牌数
+	CompletionTokens uint16 `json:"completion_tokens"` // 回答令牌数
+	TotalTokens      uint16 `json:"total_tokens"`      // 总令牌数
 }
 
 // Chat 聊天补全
