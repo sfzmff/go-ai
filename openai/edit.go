@@ -45,7 +45,7 @@ type EditUsage struct {
 
 // Edit 修改
 // model,instruction,apiKey 必传
-func Edit(model, input, instruction, user, apiKey, orgID string) (data EditRespInfo, err error) {
+func Edit(model, input, instruction, apiKey, orgID string) (data EditRespInfo, err error) {
 	if len(strings.TrimSpace(apiKey)) == 0 {
 		err = fmt.Errorf("empty api_key")
 		return
