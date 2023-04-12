@@ -16,17 +16,17 @@ const (
 )
 
 type ChatReqInfo struct {
-	Model            string         `json:"model"`             // 模型ID gpt-3.5-turbo
-	Messages         []MessagesData `json:"messages"`          // 消息
-	MaxTokens        uint64         `json:"max_tokens"`        // 最大令牌数(总令牌数) 4096
-	User             string         `json:"user"`              // 用户
-	Temperature      float32        `json:"temperature"`       // 温度采样 0~2
-	TopP             float32        `json:"top_p"`             // 核心采样 0~1
-	N                uint8          `json:"n"`                 // 生成聊天补全数量
-	Stream           bool           `json:"stream"`            // 发送部分消息增量
-	Stop             [4]string      `json:"stop"`              // 停止生成令牌(生成时遇到即止)
-	PresencePenalty  float32        `json:"presence_penalty"`  // 模型谈论新主题的可能性 -2.0~2.0
-	FrequencyPenalty float32        `json:"frequency_penalty"` // 模型逐字重复同一行的可能性 -2.0~2.0
+	Model            string         `json:"model"`                       // 模型ID gpt-3.5-turbo
+	Messages         []MessagesData `json:"messages"`                    // 消息
+	User             string         `json:"user,omitempty"`              // 用户
+	MaxTokens        uint64         `json:"max_tokens,omitempty"`        // 最大令牌数(总令牌数) 4096
+	Temperature      float32        `json:"temperature,omitempty"`       // 温度采样 0~2
+	TopP             float32        `json:"top_p,omitempty"`             // 核心采样 0~1
+	N                uint8          `json:"n,omitempty"`                 // 生成聊天补全数量
+	Stream           bool           `json:"stream,omitempty"`            // 发送部分消息增量
+	Stop             [4]string      `json:"stop,omitempty"`              // 停止生成令牌(生成时遇到即止)
+	PresencePenalty  float32        `json:"presence_penalty,omitempty"`  // 模型谈论新主题的可能性 -2.0~2.0
+	FrequencyPenalty float32        `json:"frequency_penalty,omitempty"` // 模型逐字重复同一行的可能性 -2.0~2.0
 }
 
 type ChatRespInfo struct {
@@ -56,7 +56,7 @@ type ChatUsage struct {
 }
 
 // Chat 聊天补全
-// apiKey 必传
+// model,content,apiKey 必传
 func Chat(model, content, user, apiKey, orgID string) (data ChatRespInfo, err error) {
 	if len(strings.TrimSpace(apiKey)) == 0 {
 		err = fmt.Errorf("empty api_key")
@@ -70,8 +70,8 @@ func Chat(model, content, user, apiKey, orgID string) (data ChatRespInfo, err er
 	reqData := ChatReqInfo{
 		Model:            model,
 		Messages:         []MessagesData{{Role: "user", Content: content}},
-		MaxTokens:        1000,
 		User:             user,
+		MaxTokens:        1000,
 		Temperature:      1,
 		TopP:             1,
 		N:                1,

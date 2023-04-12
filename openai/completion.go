@@ -16,15 +16,15 @@ const (
 )
 
 type CompletionReqInfo struct {
-	Model       string      `json:"model"`       // 模型ID gpt-3.5-turbo
-	Prompt      string      `json:"prompt"`      // 消息
-	MaxTokens   uint64      `json:"max_tokens"`  // 最大令牌数(总令牌数) 4096
-	Temperature float32     `json:"temperature"` // 温度采样 0~2
-	TopP        float32     `json:"top_p"`       // 核心采样 0~1
-	N           uint8       `json:"n"`           // 生成聊天补全数量
-	Stream      bool        `json:"stream"`      // 发送部分消息增量
-	Stop        [4]string   `json:"stop"`        // 停止生成令牌(生成时遇到即止)
-	Logprobs    interface{} `json:"logprobs"`    // 最可能令牌的对数概率
+	Model       string      `json:"model"`                 // 模型ID text-davinci-003
+	Prompt      string      `json:"prompt"`                // 消息
+	MaxTokens   uint64      `json:"max_tokens,omitempty"`  // 最大令牌数(总令牌数) 4096
+	Temperature float32     `json:"temperature,omitempty"` // 温度采样 0~2
+	TopP        float32     `json:"top_p,omitempty"`       // 核心采样 0~1
+	N           uint8       `json:"n,omitempty"`           // 生成聊天补全数量
+	Stream      bool        `json:"stream,omitempty"`      // 发送部分消息增量
+	Stop        [4]string   `json:"stop,omitempty"`        // 停止生成令牌(生成时遇到即止)
+	Logprobs    interface{} `json:"logprobs,omitempty"`    // 最可能令牌的对数概率
 }
 
 type CompletionRespInfo struct {
@@ -37,10 +37,10 @@ type CompletionRespInfo struct {
 }
 
 type CompletionChoice struct {
-	Text         string      `json:"text"`          // 文本
-	Index        string      `json:"index"`         // 序列(第几个回答，与请求中N相关)
-	FinishReason string      `json:"finish_reason"` // 完成原因(stop为回答完毕)
-	Logprobs     interface{} `json:"logprobs"`      // 最可能令牌的对数概率
+	Text         string      `json:"text"`               // 文本
+	Index        string      `json:"index"`              // 序列(第几个回答，与请求中N相关)
+	FinishReason string      `json:"finish_reason"`      // 完成原因(stop为回答完毕)
+	Logprobs     interface{} `json:"logprobs,omitempty"` // 最可能令牌的对数概率
 }
 
 type CompletionUsage struct {
@@ -50,8 +50,8 @@ type CompletionUsage struct {
 }
 
 // Completion 补全
-// apiKey 必传
-func Completion(model, prompt, user, apiKey, orgID string) (data CompletionRespInfo, err error) {
+// model,prompt,apiKey 必传
+func Completion(model, prompt, apiKey, orgID string) (data CompletionRespInfo, err error) {
 	if len(strings.TrimSpace(apiKey)) == 0 {
 		err = fmt.Errorf("empty api_key")
 		return
