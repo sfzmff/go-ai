@@ -23,7 +23,7 @@ type ModelList struct {
 
 type ModelData struct {
 	ID         string           `json:"id"`       // 模型ID gpt-3.5-turbo
-	Object     string           `json:"object"`   // 类型 model
+	Object     string           `json:"object"`   // 对象 model
 	Created    uint64           `json:"created"`  // 创建时间 1677610602
 	OwnedBy    string           `json:"owned_by"` // 归属 openai
 	Permission []PermissionData `json:"permission"`
@@ -90,8 +90,8 @@ func ListModel(apiKey, orgID string) (data ModelList, err error) {
 }
 
 // RetrieveModel 获取指定模型
-// model,apiKey 必传
-func RetrieveModel(model, apiKey, orgID string) (data ModelData, err error) {
+// apiKey,model 必传
+func RetrieveModel(apiKey, orgID, model string) (data ModelData, err error) {
 	if len(strings.TrimSpace(model)) == 0 {
 		err = fmt.Errorf("empty model")
 		return
