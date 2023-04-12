@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -34,7 +35,7 @@ type EditRespInfo struct {
 
 type EditChoice struct {
 	Text  string `json:"text"`  // 文本
-	Index string `json:"index"` // 序列(第几个回答，与请求中N相关)
+	Index uint8  `json:"index"` // 序列(第几个回答，与请求中N相关)
 }
 
 type EditUsage struct {
@@ -45,8 +46,17 @@ type EditUsage struct {
 
 // Edit 修改
 // model,instruction,apiKey 必传
-func Edit(model, input, instruction, apiKey, orgID string) (data EditRespInfo, err error) {
-	if len(strings.TrimSpace(apiKey)) == 0 {
+func Edit(model, input, instruction, apiKey, orgID string, proxy func(*http.Request) (*url.URL, error)) (data EditRespInfo, err error) {
+	if len(strings.TrimSpace(model)) == 0 {
+		err = fmt.Errorf("empty model")
+		return
+	} else if len(strings.TrimSpace(input)) == 0 {
+		err = fmt.Errorf("empty input")
+		return
+	} else if len(strings.TrimSpace(instruction)) == 0 {
+		err = fmt.Errorf("empty instruction")
+		return
+	} else if len(strings.TrimSpace(apiKey)) == 0 {
 		err = fmt.Errorf("empty api_key")
 		return
 	}
@@ -59,10 +69,10 @@ func Edit(model, input, instruction, apiKey, orgID string) (data EditRespInfo, e
 		Model:       model,
 		Input:       input,
 		Instruction: instruction,
-		MaxTokens:   1000,
-		Temperature: 1,
-		TopP:        1,
-		N:           1,
+		// MaxTokens:   1000,
+		// Temperature: 1,
+		// TopP:        1,
+		// N:           1,
 	}
 	if dataByte, err = json.Marshal(reqData); err != nil {
 		return
@@ -79,7 +89,7 @@ func Edit(model, input, instruction, apiKey, orgID string) (data EditRespInfo, e
 	client := &http.Client{
 		Timeout: time.Second * 60,
 		Transport: &http.Transport{
-			// Proxy: http.ProxyURL(fixedURL),
+			Proxy: proxy,
 			DialContext: (&net.Dialer{
 				Timeout: time.Second * 60, // 设置超时时间
 			}).DialContext,

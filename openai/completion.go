@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -23,7 +24,7 @@ type CompletionReqInfo struct {
 	TopP        float32     `json:"top_p,omitempty"`       // 核心采样 0~1
 	N           uint8       `json:"n,omitempty"`           // 生成聊天补全数量
 	Stream      bool        `json:"stream,omitempty"`      // 发送部分消息增量
-	Stop        [4]string   `json:"stop,omitempty"`        // 停止生成令牌(生成时遇到即止)
+	Stop        string      `json:"stop,omitempty"`        // 停止生成令牌(生成时遇到即止)
 	Logprobs    interface{} `json:"logprobs,omitempty"`    // 最可能令牌的对数概率
 }
 
@@ -38,7 +39,7 @@ type CompletionRespInfo struct {
 
 type CompletionChoice struct {
 	Text         string      `json:"text"`               // 文本
-	Index        string      `json:"index"`              // 序列(第几个回答，与请求中N相关)
+	Index        uint8       `json:"index"`              // 序列(第几个回答，与请求中N相关)
 	FinishReason string      `json:"finish_reason"`      // 完成原因(stop为回答完毕)
 	Logprobs     interface{} `json:"logprobs,omitempty"` // 最可能令牌的对数概率
 }
@@ -51,8 +52,14 @@ type CompletionUsage struct {
 
 // Completion 补全
 // model,prompt,apiKey 必传
-func Completion(model, prompt, apiKey, orgID string) (data CompletionRespInfo, err error) {
-	if len(strings.TrimSpace(apiKey)) == 0 {
+func Completion(model, prompt, apiKey, orgID string, proxy func(*http.Request) (*url.URL, error)) (data CompletionRespInfo, err error) {
+	if len(strings.TrimSpace(model)) == 0 {
+		err = fmt.Errorf("empty model")
+		return
+	} else if len(strings.TrimSpace(prompt)) == 0 {
+		err = fmt.Errorf("empty prompt")
+		return
+	} else if len(strings.TrimSpace(apiKey)) == 0 {
 		err = fmt.Errorf("empty api_key")
 		return
 	}
@@ -62,15 +69,15 @@ func Completion(model, prompt, apiKey, orgID string) (data CompletionRespInfo, e
 	var resp *http.Response
 
 	reqData := CompletionReqInfo{
-		Model:       model,
-		Prompt:      prompt,
-		MaxTokens:   1000,
-		Temperature: 1,
-		TopP:        1,
-		N:           1,
-		Stream:      false,
-		Stop:        [4]string{},
-		Logprobs:    nil,
+		Model:  model,
+		Prompt: prompt,
+		// MaxTokens:   1000,
+		// Temperature: 1,
+		// TopP:        1,
+		// N:           1,
+		// Stream:      false,
+		// Stop:        "",
+		// Logprobs:    nil,
 	}
 	if dataByte, err = json.Marshal(reqData); err != nil {
 		return
@@ -87,7 +94,7 @@ func Completion(model, prompt, apiKey, orgID string) (data CompletionRespInfo, e
 	client := &http.Client{
 		Timeout: time.Second * 60,
 		Transport: &http.Transport{
-			// Proxy: http.ProxyURL(fixedURL),
+			Proxy: proxy,
 			DialContext: (&net.Dialer{
 				Timeout: time.Second * 60, // 设置超时时间
 			}).DialContext,

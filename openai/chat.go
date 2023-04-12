@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -24,7 +25,7 @@ type ChatReqInfo struct {
 	TopP             float32        `json:"top_p,omitempty"`             // 核心采样 0~1
 	N                uint8          `json:"n,omitempty"`                 // 生成聊天补全数量
 	Stream           bool           `json:"stream,omitempty"`            // 发送部分消息增量
-	Stop             [4]string      `json:"stop,omitempty"`              // 停止生成令牌(生成时遇到即止)
+	Stop             string         `json:"stop,omitempty"`              // 停止生成令牌(生成时遇到即止)
 	PresencePenalty  float32        `json:"presence_penalty,omitempty"`  // 模型谈论新主题的可能性 -2.0~2.0
 	FrequencyPenalty float32        `json:"frequency_penalty,omitempty"` // 模型逐字重复同一行的可能性 -2.0~2.0
 }
@@ -44,9 +45,9 @@ type MessagesData struct {
 }
 
 type ChatChoice struct {
-	Messages     []MessagesData `json:"messages"`      // 消息
-	FinishReason string         `json:"finish_reason"` // 完成原因(stop为回答完毕)
-	Index        string         `json:"index"`         // 序列(第几个回答，与请求中N相关)
+	Message      MessagesData `json:"message"`       // 消息
+	FinishReason string       `json:"finish_reason"` // 完成原因(stop为回答完毕)
+	Index        uint8        `json:"index"`         // 序列(第几个回答，与请求中N相关)
 }
 
 type ChatUsage struct {
@@ -57,8 +58,14 @@ type ChatUsage struct {
 
 // Chat 聊天补全
 // model,content,apiKey 必传
-func Chat(model, content, user, apiKey, orgID string) (data ChatRespInfo, err error) {
-	if len(strings.TrimSpace(apiKey)) == 0 {
+func Chat(model, content, user, apiKey, orgID string, proxy func(*http.Request) (*url.URL, error)) (data ChatRespInfo, err error) {
+	if len(strings.TrimSpace(model)) == 0 {
+		err = fmt.Errorf("empty model")
+		return
+	} else if len(strings.TrimSpace(content)) == 0 {
+		err = fmt.Errorf("empty content")
+		return
+	} else if len(strings.TrimSpace(apiKey)) == 0 {
 		err = fmt.Errorf("empty api_key")
 		return
 	}
@@ -68,17 +75,17 @@ func Chat(model, content, user, apiKey, orgID string) (data ChatRespInfo, err er
 	var resp *http.Response
 
 	reqData := ChatReqInfo{
-		Model:            model,
-		Messages:         []MessagesData{{Role: "user", Content: content}},
-		User:             user,
-		MaxTokens:        1000,
-		Temperature:      1,
-		TopP:             1,
-		N:                1,
-		Stream:           false,
-		Stop:             [4]string{},
-		PresencePenalty:  0,
-		FrequencyPenalty: 0,
+		Model:    model,
+		Messages: []MessagesData{{Role: "user", Content: content}},
+		User:     user,
+		// MaxTokens:        1000,
+		// Temperature:      1,
+		// TopP:             1,
+		// N:                1,
+		// Stream:           false,
+		// Stop:             "",
+		// PresencePenalty:  0,
+		// FrequencyPenalty: 0,
 	}
 	if dataByte, err = json.Marshal(reqData); err != nil {
 		return
@@ -92,10 +99,11 @@ func Chat(model, content, user, apiKey, orgID string) (data ChatRespInfo, err er
 		req.Header.Set("OpenAI-Organization", orgID)
 	}
 
+	fixedURL, _ := url.Parse("http://127.0.0.1:7890")
 	client := &http.Client{
 		Timeout: time.Second * 60,
 		Transport: &http.Transport{
-			// Proxy: http.ProxyURL(fixedURL),
+			Proxy: http.ProxyURL(fixedURL),
 			DialContext: (&net.Dialer{
 				Timeout: time.Second * 60, // 设置超时时间
 			}).DialContext,
