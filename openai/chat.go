@@ -99,11 +99,10 @@ func Chat(model, content, user, apiKey, orgID string, proxy func(*http.Request) 
 		req.Header.Set("OpenAI-Organization", orgID)
 	}
 
-	fixedURL, _ := url.Parse("http://127.0.0.1:7890")
 	client := &http.Client{
 		Timeout: time.Second * 60,
 		Transport: &http.Transport{
-			Proxy: http.ProxyURL(fixedURL),
+			Proxy: proxy,
 			DialContext: (&net.Dialer{
 				Timeout: time.Second * 60, // 设置超时时间
 			}).DialContext,
